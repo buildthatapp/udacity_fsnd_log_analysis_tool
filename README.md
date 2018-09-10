@@ -83,6 +83,72 @@ Then run the following command to load the logs into the database:
 psql -d news -f newsdata.sql
 ```
 
+### Creating required Views
+Run the following command to connect to the psql database.
+
+```bash
+psql news
+```
+
+Create View VIEW_top_three_articles
+Run the following command.
+
+```bash
+CREATE VIEW VIEW_top_three_articles
+AS
+            SELECT articles.title,
+                   count(*) as article_views
+            FROM   log,
+                   articles
+            WHERE  log.path = '/article/' || articles.slug
+            GROUP BY articles.title
+            ORDER BY article_views DESC
+            LIMIT 3;"""
+```
+
+Create View VIEW_most_popular_articles
+Run the following command.
+
+```bash
+CREATE VIEW VIEW_most_popular_authors
+			AS
+			SELECT authors.name,
+                   count(*) as author_views
+            FROM   log ,
+                   articles JOIN
+                   authors ON articles.author = authors.id
+            WHERE  (log.path = '/article/' || articles.slug)
+            GROUP BY authors.name
+            ORDER BY author_views DESC;
+```
+
+Create View VIEW_days_with_over_one_percent_errors
+Run the following command.
+
+```bash
+CREATE VIEW VIEW_days_with_over_one_percent_errors
+AS
+WITH num_requests AS (                                                              
+                SELECT time::date AS day, count(*)
+                FROM log
+                GROUP BY time::date
+                ORDER BY time::date
+              ), num_errors AS (
+                SELECT time::date AS day, count(*)
+                FROM log
+                WHERE status != '200 OK'
+                GROUP BY time::date
+                ORDER BY time::date
+              ), error_rate AS (
+                SELECT num_requests.day,
+                  num_errors.count::float / num_requests.count::float * 100
+                  AS error_pc
+                FROM num_requests, num_errors
+                WHERE num_requests.day = num_errors.day
+              )
+            SELECT * FROM error_rate WHERE error_pc > 1;
+```
+
 ### Running the reporting tool
 The logs reporting tool is executed with the following command:
 
