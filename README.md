@@ -5,16 +5,16 @@
 Logs Analysis Project, part of the Udacity
 [Full Stack Web Developer Nanodegree](https://www.udacity.com/course/full-stack-web-developer-nanodegree--nd004).
 
-## Project purpose
-To write SQL queries to answer the following questions about a PostgreSQL
-database containing the logs of a fictional newspaper website.
+## Project Overview
+To write SQL queries that will extract the information needed to answer
+the following three questions about a PSQL database.
 
 1. What are the most popular three articles of all time?
 2. Who are the most popular article authors of all time?
 3. On which days did more than 1% of requests lead to errors?
 
 ## Required Libraries and Dependencies
-The project code requires the following software:
+The project requires (at least) the following software and versions:
 
 * Python 3.5.2
 * psycopg2 2.7.3.2
@@ -51,10 +51,10 @@ Bring up the VM with the following command:
 vagrant up
 ```
 
-The first time you run this command, it will take awhile, as Vagrant needs to
+The first time you run this command, it will take a few minutes, as Vagrant needs to
 download the VM image.
 
-You can then log into the VM with the following command:
+After the download has completed, you can log into the VM with the following command:
 
 ```bash
 vagrant ssh
@@ -63,27 +63,31 @@ vagrant ssh
 More detailed instructions for installing the Vagrant VM can be found
 [here](https://www.udacity.com/wiki/ud197/install-vagrant).
 
-### Make sure you're in the right place
+### Navigate to the correct directory
 Once inside the VM, navigate to the tournament directory with this command:
 
 ```bash
 cd /vagrant
 ```
 
-### Load the logs into the database
+### Load the news data into the database
 First, unzip the zip file with the command:
 
 ```bash
 unzip newsdata.zip
 ```
 
-Then run the following command to load the logs into the database:
+Then run the following command to load the news data into the database:
 
 ```bash
 psql -d news -f newsdata.sql
 ```
 
-### Creating required Views
+### Creating the required Views
+
+Three views must be created in the news database in order
+to successfully run the Python code.
+
 Run the following command to connect to the psql database.
 
 ```bash
@@ -103,7 +107,7 @@ AS
             WHERE  log.path = '/article/' || articles.slug
             GROUP BY articles.title
             ORDER BY article_views DESC
-            LIMIT 3;"""
+            LIMIT 3;
 ```
 
 Create View VIEW_most_popular_articles
@@ -128,37 +132,38 @@ Run the following command.
 ```bash
 CREATE VIEW VIEW_days_with_over_one_percent_errors
 AS
-WITH num_requests AS (                                                              
+WITH number_of_requests AS (                                                              
                 SELECT time::date AS day, count(*)
                 FROM log
                 GROUP BY time::date
                 ORDER BY time::date
-              ), num_errors AS (
+              ), number_of_errors AS (
                 SELECT time::date AS day, count(*)
                 FROM log
-                WHERE status != '200 OK'
+                WHERE status <> '200 OK'
                 GROUP BY time::date
                 ORDER BY time::date
               ), error_rate AS (
-                SELECT num_requests.day,
-                  num_errors.count::float / num_requests.count::float * 100
-                  AS error_pc
-                FROM num_requests, num_errors
-                WHERE num_requests.day = num_errors.day
+                SELECT number_of_requests.day,
+                  number_of_errors.count::float / number_of_requests.count::float * 100
+                  AS error_percent
+                FROM number_of_requests, number_of_errors
+                WHERE number_of_requests.day = number_of_errors.day
               )
-            SELECT * FROM error_rate WHERE error_pc > 1;
+            SELECT * FROM error_rate WHERE error_percent > 1;
 ```
 
 ### Running the reporting tool
-The logs reporting tool is executed with the following command:
+Type the following command in to run the Python reporting tool.
 
 ```bash
 python3 log_analysis_tool.py
 ```
 
-The answers to the three questions should now be displayed.
+After running the Python command, the answers to the three questions
+should be displayed.
 
-### Shutting the VM down
+### Turning Off the Virtual Machine
 When you are finished with the VM, press `Ctrl-D` to log out of it and shut it
 down with this command:
 
