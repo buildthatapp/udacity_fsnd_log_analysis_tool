@@ -87,7 +87,7 @@ psql -d news -f newsdata.sql
 The logs reporting tool is executed with the following command:
 
 ```bash
-python3 logs_analysis_tool.py
+python3 log_analysis_tool.py
 ```
 
 The answers to the three questions should now be displayed.
